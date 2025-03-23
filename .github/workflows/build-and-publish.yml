@@ -1,0 +1,72 @@
+name: Build and Publish
+run-name: ${{ github.ref_name }}
+
+on:
+  push:
+    tags:
+    - "v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+
+concurrency:
+  group: "publish"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_OUTPUT
+      - name: Set up Nuget
+        run: dotnet nuget add source --username USERNAME --password ${{ secrets.PUBLISH_NUGET_PACKAGE_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/vatsim-vnas/index.json"
+      - name: Build
+        run: dotnet build --configuration Release /p:Version=${{ steps.version.outputs.version }}
+      - name: Pack
+        run: dotnet pack --configuration Release /p:Version=${{ steps.version.outputs.version }} --no-build --property:PackageOutputPath=package
+      - name: Archive package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: package
+    outputs:
+     version: ${{ steps.version.outputs.version }}
+      
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+      - name: Publish
+        run: dotnet nuget push Vatsim.Nas.DataFeed.${{ needs.build.outputs.version }}.nupkg --source https://nuget.pkg.github.com/vatsim-vnas/index.json --api-key ${GITHUB_TOKEN}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PUBLISH_NUGET_PACKAGE_TOKEN }}
+          
+  create-release:
+    needs: publish
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ncipollo/release-action@v1
+      - name: Set succeeded to true
+        id: succeeded
+        run: echo "succeeded=true" >> "$GITHUB_OUTPUT"
+    outputs:
+     succeeded: ${{ steps.succeeded.outputs.succeeded }}
+     
+  send-notifiction:
+      needs: create-release
+      if: ${{ always() }}
+      uses: vatsim-vnas/github-workflows/.github/workflows/send-release-notification.yml@master
+      with:
+        succeeded: ${{ needs.create-release.outputs.succeeded == 'true' }}
+        repository: ${{ github.repository }}
+        run-id: ${{ github.run_id }}
+        version: ${{ github.ref_name }}
+  
