@@ -57,3 +57,13 @@ jobs:
         run: echo "succeeded=true" >> "$GITHUB_OUTPUT"
     outputs:
      succeeded: ${{ steps.succeeded.outputs.succeeded }}
+
+  send-notifiction:
+    needs: create-release
+    if: ${{ always() }}
+    uses: vatsim-vnas/github-workflows/.github/workflows/send-release-notification.yml@master
+    with:
+      succeeded: ${{ needs.create-release.outputs.succeeded == 'true' }}
+      repository: ${{ github.repository }}
+      run-id: ${{ github.run_id }}
+      version: ${{ github.ref_name }}
