@@ -20,8 +20,6 @@ jobs:
       - name: Get version
         id: version
         run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_OUTPUT
-      - name: Set up Nuget
-        run: dotnet nuget add source --username USERNAME --password ${{ secrets.PUBLISH_NUGET_PACKAGE_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/vatsim-vnas/index.json"
       - name: Build
         run: dotnet build --configuration Release /p:Version=${{ steps.version.outputs.version }}
       - name: Pack
@@ -59,14 +57,3 @@ jobs:
         run: echo "succeeded=true" >> "$GITHUB_OUTPUT"
     outputs:
      succeeded: ${{ steps.succeeded.outputs.succeeded }}
-     
-  send-notifiction:
-      needs: create-release
-      if: ${{ always() }}
-      uses: vatsim-vnas/github-workflows/.github/workflows/send-release-notification.yml@master
-      with:
-        succeeded: ${{ needs.create-release.outputs.succeeded == 'true' }}
-        repository: ${{ github.repository }}
-        run-id: ${{ github.run_id }}
-        version: ${{ github.ref_name }}
-  
