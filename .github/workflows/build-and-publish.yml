@@ -67,3 +67,5 @@ jobs:
       repository: ${{ github.repository }}
       run-id: ${{ github.run_id }}
       version: ${{ github.ref_name }}
+    secrets:
+      bot_webhook_url: ${{ secrets.BOT_WEBHOOK_URL }}
