@@ -14,6 +14,6 @@ Documentation is available at https://data-admin.vnas.vatsim.net/docs/#/controll
 
 ## License
 
-Copyright 2025 Ross Alan Carlson.
+Copyright (c) 2025 Ross Alan Carlson.
 
 Licensed under the [MIT License](https://mit-license.org/).
