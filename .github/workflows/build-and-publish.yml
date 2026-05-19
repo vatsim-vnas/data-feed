@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v6
       - name: Get version
         id: version
         run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_OUTPUT
@@ -25,7 +25,7 @@ jobs:
       - name: Pack
         run: dotnet pack --configuration Release /p:Version=${{ steps.version.outputs.version }} --no-build --property:PackageOutputPath=package
       - name: Archive package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: package
           path: package
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: package
       - name: Publish
@@ -51,14 +51,14 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: ncipollo/release-action@v1
+      - uses: ncipollo/release-action@v1.21.0
       - name: Set succeeded to true
         id: succeeded
         run: echo "succeeded=true" >> "$GITHUB_OUTPUT"
     outputs:
      succeeded: ${{ steps.succeeded.outputs.succeeded }}
 
-  send-notifiction:
+  send-notification:
     needs: create-release
     if: ${{ always() }}
     uses: vatsim-vnas/github-workflows/.github/workflows/send-release-notification.yml@master
